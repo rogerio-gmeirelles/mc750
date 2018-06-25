@@ -55,12 +55,14 @@ def unrewind_video(buffer, index):
         cv2.imshow('frame', frame)                      # show the frame frame
         cv2.waitKey(DELAY)                              # wait for 25ms
 
-def play_video(rewind_buffer, video, delay=DELAY):
+def play_video(faces_amount, rewind_buffer, video, delay=DELAY):
     ret, frame = video.read()                           # get next frame
     # mantem o rewind buffer
     rewind_buffer.append(frame)
     if len(rewind_buffer) > MAX_REWIND:
         rewind_buffer.pop(0)
+
+    cv2.putText(img=frame, text=str(faces_amount), org=(10,500), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255))
 
     cv2.imshow('frame', frame)                          # show the frame
     cv2.waitKey(delay)                                  # wait for 25ms
@@ -97,8 +99,8 @@ while True:
     # Play the video while there are faces detected or observers
     while faces_amount > 0 or has_observer:
         for _ in range(10):
-            play_video(rewind_buffer, video)
-        play_video(rewind_buffer, video, DELAY_MIN)
+            play_video(faces_amount, rewind_buffer, video)
+        play_video(faces_amount, rewind_buffer, video, DELAY_MIN)
         faces_amount = find_faces(webcam)
 
     # If the faces disappear and no observer is detected, rewind video
