@@ -79,6 +79,7 @@ def audio_speed(audio_buffer, faces_amount):
         audio_length = 283
         mixer.music.load('deep_time_x16.ogg')
 
+
     for time in audio_buffer: time *= multiplier
 
     base_time = (mixer.music.get_pos()/1000 + base_time)*multiplier
@@ -94,6 +95,7 @@ def rewind_video(video_buffer, webcam):
     i = 0
     for index, frame in enumerate(reversed(video_buffer)):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # to greyscale
+        displayObservers(gray, 0, -1.0)
         cv2.imshow('frame',gray)                        # show the frame frame
         frame_count -= 1
         # if the face comes back stop rewinding
@@ -106,8 +108,8 @@ def rewind_video(video_buffer, webcam):
 
     return -1       # If surpasses buffer length, return to FRAME_0
 
-def unrewind_video(rewid_buffer, audio_buffer, index):
-    global DELAY, SCAN_FACES, MAX_REWIND, base_time, led, frame_count
+def unrewind_video(rewid_buffer, audio_buffer, index, facs_amount):
+    global DELAY, SCAN_FACES, MAX_REWIND, base_time, led, frame_count, buffer_speed
     print("Unrewinding")
     buffer_cut = rewind_buffer[len(rewind_buffer)-index:]
     base_time = audio_buffer[len(rewind_buffer)-index]
@@ -122,6 +124,7 @@ def unrewind_video(rewid_buffer, audio_buffer, index):
 
         sync_audio()
         frame_count += 1
+        displayObservers(frame, faces_amount, buffer_speed)
         cv2.imshow('frame',frame)                       # show the frame frame
         cv2.waitKey(DELAY)                              # wait for 25ms
 
@@ -139,7 +142,8 @@ def play_video(rewind_buffer, video, audio_buffer, faces_amount):
        mute = 0
 
     # updates audio and video buffers
-    rewind_buffer.append(frame)
+    frame_copy = frame.copy()
+    rewind_buffer.append(frame_copy)
     audio_buffer.append(frame_time)
 
     # check buffers for max capacity
@@ -151,9 +155,15 @@ def play_video(rewind_buffer, video, audio_buffer, faces_amount):
         mixer.music.play(0, audio_speed(audio_buffer, faces_amount))
         old_faces_amount = faces_amount
 
+    displayObservers(frame, faces_amount, buffer_speed)
     cv2.imshow('frame',frame)               # show the frame
     cv2.waitKey(DELAY)
 
+def displayObservers(frame, observers, speed):
+    if speed > 0 and observers == 0:
+        observers = 1
+    text = "OBSERVERS: " + str(observers) + " (x" + str(float(speed)) + ")"
+    cv2.putText(frame, text, (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
 
 face_cascade = cv2.CascadeClassifier("cascade_face.xml") # Open the Haar Cascade
 webcam = cv2.VideoCapture(0) # Open webcam
@@ -214,7 +224,7 @@ while True:
     #TODO When we run out of buffer go back to the main loop
     if index > 0 or led:
         #before that, play again what was rewinded
-        unrewind_video(rewind_buffer, audio_buffer, index)
+        unrewind_video(rewind_buffer, audio_buffer, index, find_faces(webcam))
         continue
     else:
         rewind_buffer = []
