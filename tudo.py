@@ -4,7 +4,7 @@ import cv2, serial
 
 
 __FACES__ = -1
-__LEDRG__ = -1
+__LEDRG__ = 0
 
 
 def displayObservers(frame, observers, speed):
@@ -219,9 +219,9 @@ while True:
         faces_amount = find_faces(webcam)
 
     # if the faces disappear, rewind video
-    index = 0
-    if index >= 0 and not led:
-        index = rewind_video(rewind_buffer, webcam)
+    # index = 0
+    # if index >= 0 and not led:
+    index = rewind_video(rewind_buffer, webcam)
 
     #TODO When we run out of buffer go back to the main loop
     if (index > 0 or led):
